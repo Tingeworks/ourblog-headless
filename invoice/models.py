@@ -41,6 +41,11 @@ class Invoice(models.Model):
         # Save again with the generated serial number
         super().save(*args, **kwargs)
 
+    def mark_as_paid(self):
+        self.status = 'paid'
+        self.save()
+        return True
+
     def send_invoice_email(self):
         subject = f"Invoice {self.serial} for {self.client.name}"
         # message = f"Dear {self.client.name},\n\n<h1>Please find attached the invoice for the services rendered.</h1>\n\nBest regards,\n\nYour Company"
@@ -105,6 +110,10 @@ class Invoice(models.Model):
             total_amount="71,000",
             service_description=self.description
         )
+
+        if self.status == 'draft':
+            self.status = 'sent'
+            self.save()
 
         send_mail(subject, "",settings.DEFAULT_FROM_EMAIL, recipient_list, html_message= email_html_content)
         return True
