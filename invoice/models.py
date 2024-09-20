@@ -46,6 +46,16 @@ class Invoice(models.Model):
         self.save()
         return True
 
+    def reopen(self):
+        self.status = "draft"
+        self.save()
+        return True
+    
+    def cancel(self):
+        self.status = "cancelled"
+        self.save()
+        return True
+
     def send_invoice_email(self):
         subject = f"Invoice {self.serial} for {self.client.name}"
         # message = f"Dear {self.client.name},\n\n<h1>Please find attached the invoice for the services rendered.</h1>\n\nBest regards,\n\nYour Company"

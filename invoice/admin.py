@@ -10,12 +10,16 @@ from django.urls import reverse
 # Register your models here.
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('serial', 'status', 'get_client_name', 'price', 'created_at')
-    search_fields = ('serial', 'get_client_name')
+    list_display = ('serial', 'invoice_status', 'client_name', 'price', 'created_at')
+    search_fields = ('serial', 'client')
+    list_filter = ('status', 'created_at')
 
-    def get_client_name(self, obj):
-        return obj.client.name
-    
+    def invoice_status (self, obj):
+        return mark_safe("<span style='background-color: green; padding: 0.25em 2em;border-radius: 25px; font-weight: bold;text-align:center;'>Paid</span>") if obj.status == 'paid' else mark_safe(f"<span style='background-color: red; padding: 0.25em 2em; border-radius: 25px; font-weight: bold;text-align:center;'>{obj.status}</span>")
+
+    def client_name(self, obj):
+        return mark_safe(f"<a href='/admin/invoice/client/{obj.client.id}/change/'>{obj.client.name} ({obj.client.email})</a>")
+
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
@@ -29,9 +33,34 @@ class InvoiceAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.mark_as_paid),
                 name='mark-as-paid',
             ),
+            path(
+                '<int:invoice_id>/reopen/',
+                self.admin_site.admin_view(self.reopen),
+                name='reopen'
+            ),
+            path(
+                '<int:invoice_id>/cancel/',
+                self.admin_site.admin_view(self.cancel),
+                name='cancel'
+            ),
         ]
         return custom_urls + urls
     
+    def cancel(self, request, invoice_id):
+        invoice = self.get_object(request, invoice_id)
+        if invoice:
+            invoice.cancel()
+            self.message_user(request, "Invoice has been cancelled", messages.SUCCESS)
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+    
+    def reopen(self, request, invoice_id):
+        invoice = self.get_object(request, invoice_id)
+        if invoice:
+            invoice.reopen()
+            self.message_user(request, "Invoice has been reopened", messages.SUCCESS)
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
     def mark_as_paid(self, request, invoice_id):
         invoice = self.get_object(request, invoice_id)
         if invoice:
@@ -54,9 +83,14 @@ class InvoiceAdmin(admin.ModelAdmin):
     
     def send_email_button(self, obj):
         if obj.pk:
-            url = reverse('admin:send-invoice-email', args=[obj.pk])
-            url1 = reverse('admin:mark-as-paid', args=[obj.pk])
-            return mark_safe(f'<div style="display:flex;column-gap:15px;margin:0;padding:0;align-items:center;justify-content:center;"><a class="button" href="{url}">Send Email</a><a class="button" href="{url1}">Mark as Paid</a></div>')
+            if obj.status == 'paid' or obj.status == 'cancelled':
+                url = reverse('admin:reopen', args=[obj.pk])    
+                return mark_safe(f'<p style="color: grey; padding:0; margin: 0;"><span>({obj.status})</span> Invoice has been closed. <a href="{url}" >Reopen?</a></p>')
+
+            send_invoice_url = reverse('admin:send-invoice-email', args=[obj.pk])
+            confirm_payment_url = reverse('admin:mark-as-paid', args=[obj.pk])
+            cancel_payment_url = reverse('admin:cancel', args=[obj.pk])
+            return mark_safe(f'<div style="display:flex;column-gap:15px;margin:0;padding:0;align-items:center;justify-content:center;"><a class="button" href="{send_invoice_url}">Send Email</a><a class="button" href="{confirm_payment_url}">Mark as Paid</a><a class="button" href="{cancel_payment_url}">Cancel</a></div>')
         return 'Actions appear after saving the record'
 
     send_email_button.allow_tags = True
@@ -74,6 +108,10 @@ class InvoiceAdmin(admin.ModelAdmin):
         # Check if the invoice is paid and display the message
         if invoice and invoice.status == 'paid':
             self.message_user(request, "This invoice has been paid.", messages.INFO)
+
+        if invoice and invoice.status == 'cancelled':
+            self.message_user(request, "This invoice has been cancelled.", messages.INFO)
+
 
         return response
 
