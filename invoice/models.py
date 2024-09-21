@@ -1,7 +1,6 @@
 from django.db import models
 from datetime import datetime
-from django.core.mail import send_mail
-from django.conf import settings
+from .tasks import send_async_mail
 
 class Client(models.Model):
     id = models.AutoField(primary_key=True)
@@ -125,7 +124,7 @@ class Invoice(models.Model):
             self.status = 'sent'
             self.save()
 
-        send_mail(subject, "",settings.DEFAULT_FROM_EMAIL, recipient_list, html_message= email_html_content)
+        send_async_mail.delay(subject, "", recipient_list, html_message=email_html_content)
         return True
 
 

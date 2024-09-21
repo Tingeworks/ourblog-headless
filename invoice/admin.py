@@ -1,21 +1,33 @@
+from gettext import ngettext
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from django.shortcuts import redirect
+from django.db.models import QuerySet
 from .models import Client, Invoice
-from django.http import HttpResponseRedirect
+from django.http import HttpRequest, HttpResponseRedirect
 from django.contrib import messages
-from django.urls import path
+from django.urls import path, reverse_lazy
 from django.utils.safestring import mark_safe
 from django.urls import reverse
+from unfold.decorators import action
+
+    
+def notify(self, request, queryset=None):
+    for invoice in queryset:
+        invoice.send_invoice_email()
+    self.message_user(request, "Reminders sent! Everyone recieved an email.", messages.INFO)
+
 
 # Register your models here.
 @admin.register(Invoice)
-class InvoiceAdmin(admin.ModelAdmin):
+class InvoiceAdmin(ModelAdmin):
     list_display = ('serial', 'invoice_status', 'client_name', 'price', 'created_at')
     search_fields = ('serial', 'client')
     list_filter = ('status', 'created_at')
+    actions = [notify]
 
     def invoice_status (self, obj):
-        return mark_safe("<span style='background-color: green; padding: 0.25em 2em;border-radius: 25px; font-weight: bold;text-align:center;'>Paid</span>") if obj.status == 'paid' else mark_safe(f"<span style='background-color: red; padding: 0.25em 2em; border-radius: 25px; font-weight: bold;text-align:center;'>{obj.status}</span>")
+        return "Paid" if obj.status == 'paid' else obj.status
 
     def client_name(self, obj):
         return mark_safe(f"<a href='/admin/invoice/client/{obj.client.id}/change/'>{obj.client.name} ({obj.client.email})</a>")
@@ -111,17 +123,18 @@ class InvoiceAdmin(admin.ModelAdmin):
 
         if invoice and invoice.status == 'cancelled':
             self.message_user(request, "This invoice has been cancelled.", messages.INFO)
-
-
         return response
+
+
 
     fieldsets = (
         (None, {
             'fields': ('serial', 'client', 'description', 'price', 'created_at', 'status', 'send_email_button'),
         }),
     )
+
     
 @admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
+class ClientAdmin(ModelAdmin):
     list_display = ('name', 'email', 'created_at')
     search_fields = ('name', 'email')

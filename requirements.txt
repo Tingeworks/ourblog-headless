@@ -1,5 +1,11 @@
 asgiref==3.8.1
+diff-match-patch==20230430
 Django==5.1.1
+django-guardian==2.4.0
+django-import-export==4.1.1
+django-simple-history==3.7.0
+django-unfold==0.39.0
 python-dotenv==1.0.1
 sqlparse==0.5.1
+tablib==3.5.0
 tzdata==2024.1
