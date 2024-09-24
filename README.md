@@ -5,3 +5,6 @@ A simple CRMxCMS for agencies.
 - Client management
 - Invoice Automation
 - Blogging system
+
+## Installation
+This is drf (Django Rest Framework) Project. It deploys like any other django applications. Check the issues page for contributing to this project.
