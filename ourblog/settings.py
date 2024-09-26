@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "simple_history",
     "guardian",
     "import_export",
+    "core",
     "invoice",
     "blog"
 ]
