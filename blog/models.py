@@ -9,7 +9,7 @@ class Author(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
-class Tags(models.Model):
+class Tag(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,7 +34,7 @@ class Article(models.Model):
     exerpt = models.CharField(max_length=150)
     content = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    tags = models.ManyToManyField(Tags)
+    tags = models.ManyToManyField(Tag)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

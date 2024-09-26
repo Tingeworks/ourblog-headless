@@ -1,19 +1,19 @@
 from django.contrib import admin
-from blog.models import Author, Tags, Category, Article
-
+from blog.models import Author, Tag, Category, Article
+from unfold.admin import ModelAdmin
 
 @admin.register(Author)
-class AuthorAdmin(admin.ModelAdmin):
+class AuthorAdmin(ModelAdmin):
     pass
 
-@admin.register(Tags)
-class TagsAdmin(admin.ModelAdmin):
+@admin.register(Tag)
+class TagsAdmin(ModelAdmin):
     pass
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ModelAdmin):
     pass
 
 @admin.register(Article)
-class ArticleAdmin(admin.ModelAdmin):
+class ArticleAdmin(ModelAdmin):
     pass
